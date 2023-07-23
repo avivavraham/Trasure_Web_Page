@@ -7,9 +7,12 @@ from datetime import datetime
 
 # create a flask instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# Old SQLAlchemy Data Base
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# New MYSQL Data Base
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:1234@localhost/our_users'
 # TODO: modified your secret key for form security
-app.config['SECRET_KEY'] = "my super secret key that no one shuld know"
+app.config['SECRET_KEY'] = "my super secret key that no one should know"
 # Initialize the Database
 db = SQLAlchemy(app)
 app.app_context().push()
