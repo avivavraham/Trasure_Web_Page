@@ -49,6 +49,15 @@
 
             {{ form.age(class="form-control") }}
             <br/>
+            {{ form.password_hash.label(class="form-label") }}
+
+            {{ form.password_hash(class="form-control") }}
+            <br/>
+            {{ form.password_hash2.label(class="form-label") }}
+
+            {{ form.password_hash2(class="form-control") }}
+            <br/>
+
 
             {{ form.submit(class="btn btn-secondary") }}
 
