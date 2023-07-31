@@ -8,19 +8,7 @@
   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endfor %}
-    {% if name %}
-        <h1>Update User!</h1>
-	<br/><br/>
-    <table class="table table-hover table-bordered table-striped">
-    {% for our_user in our_users %}
-        {{ our_user.id }}. {{ our_user.name }}- {{ our_user.email }} - {{ our_user.age }}
-        <br/>
-    {% endfor %}
-        </table>
-
-        <br/>
-
-    {% else %}
+{% if id == current_user.id %}
         <h1>Update User</h1>
         <br/>
         <div class="shadow p-3 mb-5 bg-body rounded">
@@ -56,8 +44,11 @@
         </div>
         <br/><br/><br/>
 
-
-    {% endif %}
-
+{% else %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+  Sorry, You Don't Have The Permission To Edit This Profile...
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
 
 {% endblock %}
