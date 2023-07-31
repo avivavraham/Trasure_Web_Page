@@ -28,7 +28,7 @@ class PasswordForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
-class PostForm(FlaskForm):
+class BinForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     content = StringField("Content", validators=[DataRequired()], widget=TextArea())
     author = StringField("Author")

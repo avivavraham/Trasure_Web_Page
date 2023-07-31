@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from web_forms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm
+from web_forms import LoginForm, BinForm, UserForm, PasswordForm, NamerForm
 
 # create a flask instance
 app = Flask(__name__)
@@ -32,14 +32,14 @@ def load_user(user_id):
 
 # Apps Routes: Alphabetically Ordered-
 # index  '/',
-# Add Post '/add-post',
+# Add Bin '/add_bin',
 # Dashboard 'dashboard',
 # Delete '/delete/<int:id>'
 # Error handlers
 # Login '/login'
 # Logout '/logout'
 # Name '/name'
-# Posts: '/posts', '/posts/<int:id>', '/posts/edit/<int:id>', '/posts/delete/<int:id>'
+# Bins: '/bins', '/bins/<int:id>', '/bins/edit/<int:id>', '/bins/delete/<int:id>'
 # Test Password '/test_pw'
 # Update '/update/<int:id>'
 # User: '/user/<name>', '/user-add'
@@ -52,14 +52,14 @@ def index():
 
 
 # Add Post Page
-@app.route('/add-post', methods=['GET', 'POST'])
+@app.route('/add_bin', methods=['GET', 'POST'])
 @login_required
-def add_post():
-    form = PostForm()
+def add_bin():
+    form = BinForm()
 
     if form.validate_on_submit():
         poster = current_user.id
-        post = Posts(title=form.title.data, content=form.content.data, poster_id=poster, slug=form.slug.data)
+        bin = Bins(title=form.title.data, content=form.content.data, poster_id=poster, slug=form.slug.data)
         # Clear The Form
         form.title.data = ''
         form.content.data = ''
@@ -67,14 +67,14 @@ def add_post():
         form.slug.data = ''
 
         # Add post data to database
-        db.session.add(post)
+        db.session.add(bin)
         db.session.commit()
 
         # Return a Message
-        flash("Blog Post Submitted Successfully!")
+        flash("Bin Submitted Successfully!")
 
     # Redirect to the webpage
-    return render_template("add_post.html", form=form)
+    return render_template("add_bin.html", form=form)
 
 
 # Create Dashboard Page
@@ -190,73 +190,73 @@ def name():
                            form=form)
 
 
-@app.route('/posts')
-def posts():
-    # Grab all the posts from the data base
-    posts = Posts.query.order_by(Posts.date_posted)
-    return render_template("posts.html", posts=posts)
+@app.route('/bins')
+def bins():
+    # Grab all the bins from the data base
+    bins = Bins.query.order_by(Bins.date_posted)
+    return render_template("bins.html", bins=bins)
 
 
-@app.route('/posts/<int:id>')
-def post(id):
-    post = Posts.query.get_or_404(id)
-    return render_template('post.html', post=post)
+@app.route('/bins/<int:id>')
+def bin(id):
+    bin = Bins.query.get_or_404(id)
+    return render_template('bin.html', bin=bin)
 
 
-@app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/bins/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-def edit_post(id):
-    post = Posts.query.get_or_404(id)
-    form = PostForm()
+def edit_bin(id):
+    bin = Bins.query.get_or_404(id)
+    form = BinForm()
     if form.validate_on_submit():
-        post.title = form.title.data
+        bin.title = form.title.data
         # post.author = form.author.data
-        post.slug = form.slug.data
-        post.content = form.content.data
+        bin.slug = form.slug.data
+        bin.content = form.content.data
         # Update Database
-        db.session.add(post)
+        db.session.add(bin)
         db.session.commit()
-        flash("Post Has Been Updated!")
-        return redirect(url_for('post', id=post.id))
-    if current_user.id == post.poster_id:
-        form.title.data = post.title
+        flash("Bin Has Been Updated!")
+        return redirect(url_for('bin', id=bin.id))
+    if current_user.id == bin.poster_id:
+        form.title.data = bin.title
         # form.author.data = post.author
-        form.slug.data = post.slug
-        form.content.data = post.content
-        return render_template('edit_post.html', form=form)
+        form.slug.data = bin.slug
+        form.content.data = bin.content
+        return render_template('edit_bin.html', form=form)
     else:
-        flash("You Aren't Authorized to edit this post")
-        posts = Posts.query.order_by(Posts.date_posted)
-        return render_template("posts.html", posts=posts)
+        flash("You Aren't Authorized to edit this bin")
+        bins = Bins.query.order_by(Bins.date_posted)
+        return render_template("bins.html", bins=bins)
 
 
-@app.route('/posts/delete/<int:id>')
+@app.route('/bins/delete/<int:id>')
 @login_required
-def delete_post(id):
-    post_to_delete = Posts.query.get_or_404(id)
+def delete_bin(id):
+    bin_to_delete = Bins.query.get_or_404(id)
     id = current_user.id
-    if id == post_to_delete.poster.id:
+    if id == bin_to_delete.poster.id:
         try:
-            db.session.delete(post_to_delete)
+            db.session.delete(bin_to_delete)
             db.session.commit()
             # Return a message
-            flash("Blog Post Was Deleted!")
-            # Grab all the posts from the database
-            posts = Posts.query.order_by(Posts.date_posted)
-            return render_template("posts.html", posts=posts)
+            flash("Bin Was Deleted!")
+            # Grab all the bins from the database
+            bins = Bins.query.order_by(Bins.date_posted)
+            return render_template("bins.html", bins=bins)
 
         except:
             # Return an error message
-            flash("Whoops! There was a problem deleting post, try again...")
-            # Grab all the posts from the database
-            posts = Posts.query.order_by(Posts.date_posted)
-            return render_template("posts.html", posts=posts)
+            flash("Whoops! There was a problem deleting bin, try again...")
+            # Grab all the bins from the database
+            bins = Bins.query.order_by(Bins.date_posted)
+            return render_template("bins.html", bins=bins)
     else:
         # Return a message
-        flash("You Aren't Authorized To Delete That Post!")
-        # Grab all the posts from the database
-        posts = Posts.query.order_by(Posts.date_posted)
-        return render_template("posts.html", posts=posts)
+        flash("You Aren't Authorized To Delete That Bin!")
+        # Grab all the bins from the database
+        bins = Bins.query.order_by(Bins.date_posted)
+        return render_template("bins.html", bins=bins)
 
 
 # Create Password Test Page
@@ -356,8 +356,8 @@ def add_user():
 
 # Classes-
 
-# Create a Blog Post model
-class Posts(db.Model):
+# Create a Bin model
+class Bins(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
     content = db.Column(db.Text)
@@ -378,8 +378,8 @@ class Users(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, default=datetime.utcnow())
     # Security - password
     password_hash = db.Column(db.String(128))
-    # User Can Have Many Posts
-    posts = db.relationship('Posts', backref='poster')
+    # User Can Have Many Bins
+    bins = db.relationship('Bins', backref='poster')
 
     @property
     def password(self):
