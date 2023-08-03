@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from web_forms import LoginForm, BinForm, UserForm, PasswordForm, NamerForm
+from web_forms import LoginForm, BinForm, UserForm, PasswordForm
 
 # create a flask instance
 app = Flask(__name__)
@@ -59,12 +59,22 @@ def add_bin():
 
     if form.validate_on_submit():
         poster = current_user.id
-        bin = Bins(title=form.title.data, content=form.content.data, poster_id=poster, slug=form.slug.data)
+        released = form.released.data if form.released.data is not None else False
+        available = form.available.data if form.available.data is not None else False
+        bin = Bins(title=form.title.data, poster_id=poster, height=form.height.data,
+                   width=form.width.data, level=form.level.data, depth=form.depth.data,
+                   latitude=form.latitude.data, longitude=form.longitude.data,
+                   released=form.released.data, available=form.available.data)
         # Clear The Form
         form.title.data = ''
-        form.content.data = ''
-        # form.author.data = ''
-        form.slug.data = ''
+        form.height.data = ''
+        form.width.data = ''
+        form.level.data = ''
+        form.depth.data = ''
+        form.latitude.data = ''
+        form.longitude.data = ''
+        form.released.data = ''
+        form.available.data = ''
 
         # Add post data to database
         db.session.add(bin)
@@ -174,22 +184,6 @@ def logout():
     return redirect(url_for('login'))
 
 
-# Create a name Page
-@app.route('/name', methods=['GET', 'POST'])
-def name():
-    name = None
-    form = NamerForm()
-    # Validate Form
-    if form.validate_on_submit():
-        name = form.name.data
-        form.name.data = ''
-        flash("Form Submitted Successfully")
-
-    return render_template("name.html",
-                           name=name,
-                           form=form)
-
-
 @app.route('/bins')
 def bins():
     # Grab all the bins from the data base
@@ -197,7 +191,7 @@ def bins():
     return render_template("bins.html", bins=bins)
 
 
-@app.route('/bins/<int:id>')
+@app.route('/bin/<int:id>')
 def bin(id):
     bin = Bins.query.get_or_404(id)
     return render_template('bin.html', bin=bin)
@@ -210,9 +204,14 @@ def edit_bin(id):
     form = BinForm()
     if form.validate_on_submit():
         bin.title = form.title.data
-        # post.author = form.author.data
-        bin.slug = form.slug.data
-        bin.content = form.content.data
+        bin.height = form.height.data
+        bin.width = form.width.data
+        bin.level = form.level.data
+        bin.depth = form.depth.data
+        bin.latitude = form.latitude.data
+        bin.longitude = form.longitude.data
+        bin.released = form.released.data if form.released.data is not None else False
+        bin.available = form.available.data if form.available.data is not None else False
         # Update Database
         db.session.add(bin)
         db.session.commit()
@@ -220,9 +219,14 @@ def edit_bin(id):
         return redirect(url_for('bin', id=bin.id))
     if current_user.id == bin.poster_id:
         form.title.data = bin.title
-        # form.author.data = post.author
-        form.slug.data = bin.slug
-        form.content.data = bin.content
+        form.height.data = bin.height
+        form.width.data = bin.width
+        form.level.data = bin.level
+        form.depth.data = bin.depth
+        form.latitude.data = bin.latitude
+        form.longitude.data = bin.longitude
+        form.released.data = bin.released
+        form.available.data = bin.available
         return render_template('edit_bin.html', form=form)
     else:
         flash("You Aren't Authorized to edit this bin")
@@ -320,11 +324,6 @@ def update(id):
                                id=id)
 
 
-# localhost:5000/user/Aviv
-@app.route('/user/<name>')
-def user(name):
-    return render_template("user.html", user_name=name)
-
 
 # Adding a new user
 @app.route('/user/add', methods=['GET', 'POST'])
@@ -359,11 +358,17 @@ def add_user():
 # Create a Bin model
 class Bins(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    # An optional bin name
     title = db.Column(db.String(255))
-    content = db.Column(db.Text)
-    # author = db.Column(db.String(255))
+    height = db.Column(db.Float, nullable=False)
+    width = db.Column(db.Float, nullable=False)
+    depth = db.Column(db.Float, nullable=False)
+    level = db.Column(db.Float, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    available = db.Column(db.Boolean)
+    released = db.Column(db.Boolean)
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
-    slug = db.Column(db.String(255))
     # Foreign Key To Link Users(refer to primary key of the user)
     poster_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 

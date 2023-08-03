@@ -13,10 +13,16 @@
 
 <div class="shadow p-3 mb-5 bg-body rounded">
 	<h2>{{ bin.title }}</h2>
-	<small>By: {{ bin.poster.name }}<br/>
-	{{ bin.date_posted }}</small> <br/><br/>
-
-	{{ bin.content }}<br/><br/>
+	<small>In Charge: {{ bin.poster.name }}<br/> Bin Attributes:
+	Height: {{ bin.height }}<br/>
+	Width: {{ bin.width }}<br/>
+	Level: {{ bin.level }}<br/>
+	Depth: {{ bin.depth }}<br/>
+	Latitude: {{ bin.latitude }}<br/>
+	Longitude: {{ bin.longitude }}<br/>
+	Released: {{ bin.released }}<br/>
+	Available: {{ bin.available }}<br/>
+	</small>
 
 </div>
 

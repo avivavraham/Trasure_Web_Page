@@ -25,15 +25,49 @@
 		{{ form.title(class="form-control") }}
 		<br/>
 		
-		{{ form.slug.label(class="form-label") }}
+		{{ form.height.label(class="form-label") }}
 
-		{{ form.slug(class="form-control") }}
+		{{ form.height(class="form-control") }}
+		<br/>
+
+		{{ form.width.label(class="form-label") }}
+
+		{{ form.width(class="form-control") }}
 		<br/>
 		
-		{{ form.content.label(class="form-label") }}
+		{{ form.level.label(class="form-label") }}
 
-		{{ form.content(class="form-control", rows="10") }}
+		{{ form.level(class="form-control") }}
 		<br/>
+		{{ form.depth.label(class="form-label") }}
+
+		{{ form.depth(class="form-control") }}
+		<br/>
+		{{ form.latitude.label(class="form-label") }}
+
+		{{ form.latitude(class="form-control") }}
+		<br/>
+		{{ form.longitude.label(class="form-label") }}
+
+		{{ form.longitude(class="form-control") }}
+		<br/>
+		{# boolean field 'released' #}
+		<div class="form-check">
+			{{ form.released(class="form-check-input", id="released-checkbox") }}
+			{{ form.released.label(class="form-check-label", for="released-checkbox") }} Released
+			(no worker is currently on about to pick it up)
+		</div>
+		<br/>
+
+		{# Another boolean field 'available' #}
+		<div class="form-check">
+			{{ form.available(class="form-check-input", id="available-checkbox") }}
+			{{ form.available.label(class="form-check-label", for="available-checkbox") }} Available
+			(should be picked up)
+		</div>
+		<br/>
+
+
 
 		
 		{{ form.submit(class="btn btn-secondary") }}
