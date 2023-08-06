@@ -5,17 +5,28 @@
     <!-- Include Leaflet CSS and JavaScript -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        /* Define the style for the bin icons */
+        .bin-icon img {
+            width: 16px;
+            height: 32px;
+        }
+    </style>
 </head>
 <body>
-    <div id="map" style="height: 500px;"></div>
+    <div id="map" style="height: 750px;"></div>
     <script>
-        // Function to calculate the color based on the level value
-        function getColor(level) {
-            // Calculate the hue value from 0 (green) to 120 (red) based on the level (0 to 100)
-            var hue = (1 - level / 100) * 120;
-            // Convert the HSL color to RGB
-            var color = 'hsl(' + hue + ', 100%, 50%)';
-            return color;
+        // Function to get the bin icon URL based on the level value
+        function getIconUrl(level) {
+            if (level <= 25) {
+                return '/static/bin_icon_green.png';
+            } else if (level <= 50) {
+                return '/static/bin_icon_yellow.png';
+            } else if (level <= 75) {
+                return '/static/bin_icon_orange.png';
+            } else {
+                return '/static/bin_icon_red.png';
+            }
         }
 
         // Initialize an empty array to store all bin markers
@@ -33,17 +44,18 @@
         var latitudes = {{ latitudes | tojson }};
         var longitudes = {{ longitudes | tojson }};
         var levels = {{ levels | tojson }}; // Assuming 'levels' contains the bin level data
+        var ids = {{ ids | tojson }};
         for (var i = 0; i < latitudes.length; i++) {
             var binLevel = levels[i]; // Access the individual bin level
-            // Calculate the color based on the bin level
-            var color = getColor(binLevel);
+            var iconUrl = getIconUrl(binLevel); // Get the appropriate icon URL
 
-            // Create a custom icon using the bin-shaped image
-            var icon = L.icon({
-                iconUrl: '/static/bin_icon.png', // Replace with the path to your bin-shaped image
-                iconSize: [32, 32], // Set the size of the icon
-                iconAnchor: [16, 32], // Set the anchor point of the icon (centered bottom)
-                popupAnchor: [0, -32] // Set the popup anchor (top-left corner)
+            // Create a custom icon using the bin-shaped image and apply the color as background
+            var icon = L.divIcon({
+                className: 'bin-icon',
+                iconSize: [16, 32],
+                iconAnchor: [8, 32],
+                popupAnchor: [0, -32],
+                html: '<a href="http://localhost:5000/bin/' + ids[i] + '"><img src="' + iconUrl + '"></a>'
             });
 
             // Add the marker with the custom icon to the map

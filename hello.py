@@ -277,8 +277,9 @@ def scatter_map():
     levels = [bin.level for bin in user_bins]
     latitudes = [bin.latitude for bin in user_bins]
     longitudes = [bin.longitude for bin in user_bins]
+    ids = [bin.id for bin in user_bins]
 
-    return render_template('scatter_map.html', latitudes=latitudes, longitudes=longitudes, levels=levels)
+    return render_template('scatter_map.html', latitudes=latitudes, longitudes=longitudes, levels=levels, ids=ids)
 
 
 # Create Password Test Page
