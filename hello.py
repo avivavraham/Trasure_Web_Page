@@ -40,6 +40,7 @@ def load_user(user_id):
 # Logout '/logout'
 # Name '/name'
 # Bins: '/bins', '/bins/<int:id>', '/bins/edit/<int:id>', '/bins/delete/<int:id>'
+# Scatter map '/scatter_map'
 # Test Password '/test_pw'
 # Update '/update/<int:id>'
 # User: '/user/<name>', '/user-add'
@@ -261,6 +262,23 @@ def delete_bin(id):
         # Grab all the bins from the database
         bins = Bins.query.order_by(Bins.date_posted)
         return render_template("bins.html", bins=bins)
+
+
+@app.route('/scatter_map')
+@login_required
+def scatter_map():
+    # Get the logged-in user's ID
+    user_id = current_user.id
+
+    # Query all the bins that belong to the logged-in user
+    user_bins = Bins.query.filter_by(poster_id=user_id).all()
+
+    # Extract latitude and longitude data for each bin
+    levels = [bin.level for bin in user_bins]
+    latitudes = [bin.latitude for bin in user_bins]
+    longitudes = [bin.longitude for bin in user_bins]
+
+    return render_template('scatter_map.html', latitudes=latitudes, longitudes=longitudes, levels=levels)
 
 
 # Create Password Test Page

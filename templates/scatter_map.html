@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scatter Map</title>
+    <!-- Include Leaflet CSS and JavaScript -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="map" style="height: 500px;"></div>
+    <script>
+        // Function to calculate the color based on the level value
+        function getColor(level) {
+            // Calculate the hue value from 0 (green) to 120 (red) based on the level (0 to 100)
+            var hue = (1 - level / 100) * 120;
+            // Convert the HSL color to RGB
+            var color = 'hsl(' + hue + ', 100%, 50%)';
+            return color;
+        }
+
+        // Initialize an empty array to store all bin markers
+        var markers = [];
+
+        // Initialize the map
+        var map = L.map('map');
+
+        // Add a tile layer to the map (you can choose any provider you like)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add markers for each bin's latitude and longitude
+        var latitudes = {{ latitudes | tojson }};
+        var longitudes = {{ longitudes | tojson }};
+        var levels = {{ levels | tojson }}; // Assuming 'levels' contains the bin level data
+        for (var i = 0; i < latitudes.length; i++) {
+            var binLevel = levels[i]; // Access the individual bin level
+            // Calculate the color based on the bin level
+            var color = getColor(binLevel);
+
+            // Create a custom icon using the bin-shaped image
+            var icon = L.icon({
+                iconUrl: '/static/bin_icon.png', // Replace with the path to your bin-shaped image
+                iconSize: [32, 32], // Set the size of the icon
+                iconAnchor: [16, 32], // Set the anchor point of the icon (centered bottom)
+                popupAnchor: [0, -32] // Set the popup anchor (top-left corner)
+            });
+
+            // Add the marker with the custom icon to the map
+            var marker = L.marker([latitudes[i], longitudes[i]], { icon: icon });
+            markers.push(marker);
+        }
+
+        // Create a feature group and add all bin markers to it
+        var markersGroup = L.featureGroup(markers);
+
+        // Fit the map to the bounds of the markers
+        map.fitBounds(markersGroup.getBounds());
+
+        // Add the markersGroup (bin markers) to the map after setting its view
+        markersGroup.addTo(map);
+    </script>
+</body>
+</html>
