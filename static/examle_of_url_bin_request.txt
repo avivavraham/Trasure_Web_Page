@@ -1,0 +1,30 @@
+[
+    {
+        "PartitionKey": "Bin",
+        "RowKey": "bin8",
+        "bin_width_cm": 30,
+        "bin_height_cm": 30,
+        "bin_depth_cm": 30,
+        "bin_level_cm:": 0,
+        "bin_longitude": 47.606544,
+        "bin_latitude": 47.606544,
+        "bin_status": "Released",
+        "bin_availability": "Available",
+        "last_acquire_time": "2023-08-11T09:57:37.171149",
+        "last_release_time": "2023-08-11T09:57:37.171149"
+    },
+    {
+        "PartitionKey": "Bin",
+        "RowKey": "bin8",
+        "bin_width_cm": 30,
+        "bin_height_cm": 30,
+        "bin_depth_cm": 30,
+        "bin_level_cm:": 0,
+        "bin_longitude": 47.606544,
+        "bin_latitude": 47.606544,
+        "bin_status": "Released",
+        "bin_availability": "Available",
+        "last_acquire_time": "2023-08-11T09:57:37.171149",
+        "last_release_time": "2023-08-11T09:57:37.171149"
+    }
+]

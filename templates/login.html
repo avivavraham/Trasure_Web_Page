@@ -1,45 +1,55 @@
 {% extends 'base.html' %}
-
 {% block content %}
+<style>
+    .login-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* Adjust to move content higher on the screen */
+        text-align: center;
+        height: 80vh; /* Adjust to control the height of the login container */
+        margin-top: 5vh; /* Adjust to add space at the top */
+    }
 
-{% for message in get_flashed_messages() %}
-	
-	<div class="alert alert-warning alert-dismissible fade show" role="alert">
-	  {{ message }}
-	  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-	</div>
+    .logo {
+        max-width: 450px; /* Adjust the size of the logo */
+        margin-bottom: 20px;
+    }
 
-	
-{% endfor %}
+    .form-container {
+        width: 80%; /* Adjust the width of the form container */
+        max-width: 500px; /* Optional: Set a maximum width for the form container */
+        padding: 20px; /* Optional: Add padding to the form container */
+        background-color: #f7f7f7; /* Optional: Change the background color of the form container */
+        border-radius: 10px; /* Optional: Add border radius to the form container */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add a box shadow to the form container */
+        margin-top: 10px; /* Adjust the top margin of the form container */
+    }
 
+</style>
 
-	<h1>Login!</h1>
-	<br/><br/>
+<div class="login-container">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
 
-	
+    {% for message in get_flashed_messages() %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
 
-<div class="shadow p-3 mb-5 bg-body rounded">
-	<form method="POST">
-		{{ form.hidden_tag() }}
-
-		{{ form.username.label(class="form-label") }}
-
-		{{ form.username(class="form-control") }}
-		<br/>
-
-		{{ form.password.label(class="form-label") }}
-
-		{{ form.password(class="form-control") }}
-		<br/>
-
-		
-		<br/>
-
-		{{ form.submit(class="btn btn-secondary") }}
-
-
-	</form>
+    <div class="form-container shadow p-3 mb-5 bg-body rounded">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control") }}
+            <br/>
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control") }}
+            <br/>
+            <br/>
+            {{ form.submit(class="btn btn-secondary") }}
+        </form>
+    </div>
 </div>
-
-
 {% endblock %}
