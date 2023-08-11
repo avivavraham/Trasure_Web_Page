@@ -186,6 +186,7 @@ def logout():
 
 
 @app.route('/bins')
+@login_required
 def bins():
     # Grab all the bins from the data base
     bins = Bins.query.order_by(Bins.date_posted)
@@ -260,6 +261,40 @@ def delete_bin(id):
         # Return a message
         flash("You Aren't Authorized To Delete That Bin!")
         # Grab all the bins from the database
+        bins = Bins.query.order_by(Bins.date_posted)
+        return render_template("bins.html", bins=bins)
+
+
+@app.route('/make_available/<int:id>', methods=['GET', 'POST'])
+@login_required
+def make_available(id):
+    bin = Bins.query.get_or_404(id)
+    if current_user.id == bin.poster_id:
+        bin.available = True
+        # Update Database
+        db.session.add(bin)
+        db.session.commit()
+        flash("Bin Has Made Available!")
+        return redirect(url_for('bin', id=bin.id))
+    else:
+        flash("You Aren't Authorized to edit this bin")
+        bins = Bins.query.order_by(Bins.date_posted)
+        return render_template("bins.html", bins=bins)
+
+
+@app.route('/make_released/<int:id>', methods=['GET', 'POST'])
+@login_required
+def make_released(id):
+    bin = Bins.query.get_or_404(id)
+    if current_user.id == bin.poster_id:
+        bin.released = True
+        # Update Database
+        db.session.add(bin)
+        db.session.commit()
+        flash("Bin Has Made Released!")
+        return redirect(url_for('bin', id=bin.id))
+    else:
+        flash("You Aren't Authorized to edit this bin")
         bins = Bins.query.order_by(Bins.date_posted)
         return render_template("bins.html", bins=bins)
 

@@ -13,7 +13,7 @@
 
 <div class="shadow p-3 mb-5 bg-body rounded">
 	<h2>{{ bin.title }}</h2>
-	<small>In Charge: {{ bin.poster.name }}<br/> Bin Attributes:
+	<small>In Charge: {{ bin.poster.name }}<br/> Bin's Attributes:<br/>
 	Height: {{ bin.height }}<br/>
 	Width: {{ bin.width }}<br/>
 	Level: {{ bin.level }}<br/>
@@ -30,6 +30,12 @@
 {% if bin.poster_id == current_user.id %}
 	<a href="{{ url_for('edit_bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">Edit Bin</a>
 	<a href="{{ url_for('delete_bin', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Delete Bin</a>
+	{% if not bin.released %}
+	<a href="{{ url_for('make_released', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Release bin</a>
+	{% endif %}
+	{% if not bin.available %}
+	<a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
+	{% endif %}
 {% endif %}
 
 {% endblock %}

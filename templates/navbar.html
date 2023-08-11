@@ -13,6 +13,15 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
           </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('add_bin') }}">Add Bin</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('bins') }}">Your Bins</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('scatter_map') }}">Map</a>
+          </li>
         {% else %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('login')}}">Login</a>
@@ -21,12 +30,6 @@
             <a class="nav-link" href="{{ url_for('add_user') }}">Register</a>
           </li>
         {% endif %}
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('add_bin') }}">Add Bin</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('bins') }}">Your Bins</a>
-        </li>
       </ul>
     </div>
   </div>
