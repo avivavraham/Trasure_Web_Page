@@ -5,7 +5,7 @@ from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from web_forms import LoginForm, BinForm, UserForm, PasswordForm
-
+import requests
 # create a flask instance
 app = Flask(__name__)
 # Old SQLAlchemy Data Base
@@ -31,12 +31,11 @@ def load_user(user_id):
 
 
 # Apps Routes: Alphabetically Ordered-
-# index  '/',
+# login  '/',
 # Add Bin '/add_bin',
 # Dashboard 'dashboard',
 # Delete '/delete/<int:id>'
 # Error handlers
-# Login '/login'
 # Logout '/logout'
 # Name '/name'
 # Bins: '/bins', '/bins/<int:id>', '/bins/edit/<int:id>', '/bins/delete/<int:id>'
@@ -44,42 +43,6 @@ def load_user(user_id):
 # Test Password '/test_pw'
 # Update '/update/<int:id>'
 # User: '/user/<name>', '/user-add'
-
-
-# Add Post Page
-@app.route('/add_bin', methods=['GET', 'POST'])
-@login_required
-def add_bin():
-    form = BinForm()
-
-    if form.validate_on_submit():
-        poster = current_user.id
-        released = form.released.data if form.released.data is not None else False
-        available = form.available.data if form.available.data is not None else False
-        bin = Bins(title=form.title.data, poster_id=poster, height=form.height.data,
-                   width=form.width.data, level=form.level.data, depth=form.depth.data,
-                   latitude=form.latitude.data, longitude=form.longitude.data,
-                   released=form.released.data, available=form.available.data)
-        # Clear The Form
-        form.title.data = ''
-        form.height.data = ''
-        form.width.data = ''
-        form.level.data = ''
-        form.depth.data = ''
-        form.latitude.data = ''
-        form.longitude.data = ''
-        form.released.data = ''
-        form.available.data = ''
-
-        # Add post data to database
-        db.session.add(bin)
-        db.session.commit()
-
-        # Return a Message
-        flash("Bin Submitted Successfully!")
-
-    # Redirect to the webpage
-    return render_template("add_bin.html", form=form)
 
 
 # Create Dashboard Page
@@ -182,15 +145,56 @@ def logout():
 @app.route('/bins')
 @login_required
 def bins():
-    # Grab all the bins from the data base
-    bins = Bins.query.order_by(Bins.date_posted)
+    # Grab all the bins from the cloud
+    return render_template("bins.html", bins=get_bins())
+
+
+@app.route('/bin/<string:id>')
+def bin(id):
+    bins = get_bins()
+    for user_bin in bins:
+        if user_bin.id == id:
+            return render_template('bin.html', bin=user_bin)
+    flash("Bin is not found")
     return render_template("bins.html", bins=bins)
 
+'''
 
-@app.route('/bin/<int:id>')
-def bin(id):
-    bin = Bins.query.get_or_404(id)
-    return render_template('bin.html', bin=bin)
+# Add Post Page
+@app.route('/add_bin', methods=['GET', 'POST'])
+@login_required
+def add_bin():
+    form = BinForm()
+
+    if form.validate_on_submit():
+        poster = current_user.id
+        released = form.released.data if form.released.data is not None else False
+        available = form.available.data if form.available.data is not None else False
+        bin = Bins(title=form.title.data, poster_id=poster, height=form.height.data,
+                   width=form.width.data, level=form.level.data, depth=form.depth.data,
+                   latitude=form.latitude.data, longitude=form.longitude.data,
+                   released=form.released.data, available=form.available.data)
+        # Clear The Form
+        form.title.data = ''
+        form.height.data = ''
+        form.width.data = ''
+        form.level.data = ''
+        form.depth.data = ''
+        form.latitude.data = ''
+        form.longitude.data = ''
+        form.released.data = ''
+        form.available.data = ''
+
+        # Add post data to database
+        db.session.add(bin)
+        db.session.commit()
+
+        # Return a Message
+        flash("Bin Submitted Successfully!")
+
+    # Redirect to the webpage
+    return render_template("add_bin.html", form=form)
+
 
 
 @app.route('/bins/edit/<int:id>', methods=['GET', 'POST'])
@@ -258,38 +262,56 @@ def delete_bin(id):
         bins = Bins.query.order_by(Bins.date_posted)
         return render_template("bins.html", bins=bins)
 
+'''
 
-@app.route('/make_available/<int:id>', methods=['GET', 'POST'])
+@app.route('/make_available/<string:id>', methods=['GET', 'POST'])
 @login_required
 def make_available(id):
-    bin = Bins.query.get_or_404(id)
-    if current_user.id == bin.poster_id:
-        bin.available = True
-        # Update Database
-        db.session.add(bin)
-        db.session.commit()
-        flash("Bin Has Made Available!")
-        return redirect(url_for('bin', id=bin.id))
+    bins = get_bins()
+    for user_bin in bins:
+        if user_bin.id == id:
+            bin = user_bin
+            # Update Database
+            bin.availability = True
+            flash("Bin Has Made Available!")
+            return redirect(url_for('bin', id=bin.id))
     else:
         flash("You Aren't Authorized to edit this bin")
-        bins = Bins.query.order_by(Bins.date_posted)
+        bins = get_bins()
         return render_template("bins.html", bins=bins)
 
 
-@app.route('/make_released/<int:id>', methods=['GET', 'POST'])
+@app.route('/make_released/<string:id>', methods=['GET', 'POST'])
 @login_required
 def make_released(id):
-    bin = Bins.query.get_or_404(id)
-    if current_user.id == bin.poster_id:
-        bin.released = True
-        # Update Database
-        db.session.add(bin)
-        db.session.commit()
-        flash("Bin Has Made Released!")
-        return redirect(url_for('bin', id=bin.id))
+    bins = get_bins()
+    for user_bin in bins:
+        if user_bin.id == id:
+            bin = user_bin
+            # Update Database
+            # TODO: How to update bin data
+            bin.status = True
+            flash("Bin Has Made Released!")
+            return redirect(url_for('bin', id=bin.id))
     else:
         flash("You Aren't Authorized to edit this bin")
-        bins = Bins.query.order_by(Bins.date_posted)
+        bins = get_bins()
+        return render_template("bins.html", bins=bins)
+
+
+@app.route('/make_available/<string:id>', methods=['GET', 'POST'])
+@login_required
+def remove_ownership(id):
+    bins = get_bins()
+    for user_bin in bins:
+        if user_bin.id == id:
+            bin = user_bin
+            # Update Database
+            flash("removed ownership from bin")
+            return redirect(url_for('bin', id=bin.id))
+    else:
+        flash("You Aren't Authorized to edit this bin")
+        bins = get_bins()
         return render_template("bins.html", bins=bins)
 
 
@@ -298,16 +320,12 @@ def make_released(id):
 def scatter_map():
     # Get the logged-in user's ID
     user_id = current_user.id
-
-    # Query all the bins that belong to the logged-in user
-    user_bins = Bins.query.filter_by(poster_id=user_id).all()
-
+    user_bins = get_bins()
     # Extract latitude and longitude data for each bin
     levels = [bin.level for bin in user_bins]
     latitudes = [bin.latitude for bin in user_bins]
     longitudes = [bin.longitude for bin in user_bins]
     ids = [bin.id for bin in user_bins]
-
     return render_template('scatter_map.html', latitudes=latitudes, longitudes=longitudes, levels=levels, ids=ids)
 
 
@@ -341,7 +359,7 @@ def test_pw():
 
 
 # Update Data Base Record
-@app.route('/update/<int:id>', methods=['GET', 'POST'])
+@app.route('/update/<string:id>', methods=['GET', 'POST'])
 @login_required
 def update(id):
     form = UserForm()
@@ -370,7 +388,6 @@ def update(id):
                                form=form,
                                name_to_update=name_to_update,
                                id=id)
-
 
 
 # Adding a new user
@@ -403,22 +420,21 @@ def add_user():
 
 # Classes-
 
-# Create a Bin model
-class Bins(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    # An optional bin name
-    title = db.Column(db.String(255))
-    height = db.Column(db.Float, nullable=False)
-    width = db.Column(db.Float, nullable=False)
-    depth = db.Column(db.Float, nullable=False)
-    level = db.Column(db.Float, nullable=False)
-    latitude = db.Column(db.Float, nullable=False)
-    longitude = db.Column(db.Float, nullable=False)
-    available = db.Column(db.Boolean)
-    released = db.Column(db.Boolean)
-    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
-    # Foreign Key To Link Users(refer to primary key of the user)
-    poster_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+class Bins:
+    def __init__(self, partition_key, row_key, latitude, longitude, width,
+                 height, depth, level, status, availability, last_acquire_time, last_pickup_time):
+        self.partition_key = partition_key
+        self.id = row_key
+        self.latitude = latitude
+        self.longitude = longitude
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.level = level
+        self.status = (status == "Released")
+        self.availability = (availability == "Available")
+        self.last_acquire_time = last_acquire_time
+        self.last_pickup_time = last_pickup_time
 
 
 # create Model
@@ -432,7 +448,7 @@ class Users(db.Model, UserMixin):
     # Security - password
     password_hash = db.Column(db.String(128))
     # User Can Have Many Bins
-    bins = db.relationship('Bins', backref='poster')
+    # bins = db.relationship('Bins', backref='poster')
 
     @property
     def password(self):
@@ -452,3 +468,39 @@ class Users(db.Model, UserMixin):
 
 with app.app_context():
     db.create_all()
+
+
+def get_bins():
+    try:
+        # URL to fetch bins data
+        url = "https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/" \
+              "getbinsofvicinity?code=SUQqcEAOu4gUmB8l_CN5JChJDM-uAyxWpQiXBh1wm5kyAzFu" \
+              "yp1qNg%3D%3D&latitude=32.122927&longitude=34.838204&radius_km=3"
+
+        # Make GET request to the URL
+        response = requests.get(url)
+        json_response = response.json()
+        # Convert JSON response to a list of Bins objects
+        user_bins = []
+        for bin_data in json_response:
+            if bin_data["PartitionKey"] == "Bin":
+                bin_obj = Bins(
+                    partition_key="Bin",
+                    row_key=bin_data["RowKey"],
+                    latitude=bin_data["bin_latitude"],
+                    longitude=bin_data["bin_longitude"],
+                    width=bin_data["bin_width_cm"],
+                    height=bin_data["bin_height_cm"],
+                    depth=bin_data["bin_depth_cm"],
+                    level=bin_data["bin_level_cm"],
+                    status=bin_data["bin_status"],
+                    availability=bin_data["bin_availability"],
+                    last_acquire_time=bin_data["last_acquire_time"],
+                    last_pickup_time=bin_data["last_pickup_time"]
+                )
+                user_bins.append(bin_obj)
+        return user_bins
+    except:
+        # Return an error message
+        flash("Whoops! There was a problem getting the bins, please try again...")
+        return []

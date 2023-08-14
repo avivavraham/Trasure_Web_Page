@@ -23,7 +23,6 @@ class PasswordForm(FlaskForm):
 
 
 class BinForm(FlaskForm):
-    title = StringField("Title", validators=[DataRequired()])
     height = FloatField("Height of bin",
                         validators=[DataRequired(), NumberRange(min=0,
                                                                 message="height must have a non-negative value")])

@@ -14,19 +14,16 @@
 <br/>
 
 {% for bin in bins %}
-{% if bin.poster_id == current_user.id %}
 
 	<div class="shadow p-3 mb-5 bg-body rounded">
-		<h2>{{ bin.title }}</h2>
-		In Charge: {{ bin.poster.name }} <br/>
 		<small>
-			{% if bin.released %}
+			{% if bin.status %}
 			The Bin is released (no worker is currently on about to pick it up)<br/>
     {% else %}
 			The Bin is not released (worker is currently on about to pick it up)
 <br/>
 			{% endif %}
-			{% if bin.available %}
+			{% if bin.availability %}
 			The Bin is available (should be picked up)<br/>
     {% else %}
 			The Bin is not available (shouldn't be picked up)
@@ -38,19 +35,14 @@
 		<br/><br/>
 		<br/><br/>
 		<a href="{{ url_for('bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">View Bin's Attributes</a>
-	{% if bin.poster_id == current_user.id %}
-		<a href="{{ url_for('edit_bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">Edit Bin</a>
-		<a href="{{ url_for('delete_bin', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Delete Bin</a>
-		{% if not bin.released %}
+		{% if not bin.status %}
 		<a href="{{ url_for('make_released', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Release bin</a>
 		{% endif %}
-		{% if not bin.available %}
+		{% if not bin.availability %}
 		<a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
-		{% endif %}
 		{% endif %}
 </div>
 <br/>
-{% endif %}
 {% endfor %}
 <br/>
 {% endblock %}

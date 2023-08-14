@@ -15,7 +15,7 @@
     },
     {
         "PartitionKey": "Bin",
-        "RowKey": "bin8",
+        "RowKey": "bin9",
         "bin_width_cm": 30,
         "bin_height_cm": 30,
         "bin_depth_cm": 30,

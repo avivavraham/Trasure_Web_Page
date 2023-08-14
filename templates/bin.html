@@ -12,30 +12,28 @@
 <br/>
 
 <div class="shadow p-3 mb-5 bg-body rounded">
-	<h2>{{ bin.title }}</h2>
-	<small>In Charge: {{ bin.poster.name }}<br/> Bin's Attributes:<br/>
+	<small> Bin's Attributes:<br/>
 	Height: {{ bin.height }}<br/>
 	Width: {{ bin.width }}<br/>
 	Level: {{ bin.level }}<br/>
 	Depth: {{ bin.depth }}<br/>
 	Latitude: {{ bin.latitude }}<br/>
 	Longitude: {{ bin.longitude }}<br/>
-	Released: {{ bin.released }}<br/>
-	Available: {{ bin.available }}<br/>
+	Released: {{ bin.status }}<br/>
+	Available: {{ bin.availability }}<br/>
+	Last Released: {{ bin.last_pickup_time }}<br/>
+	Last Acquired: {{ bin.last_acquire_time }}<br/>
+
 	</small>
 
 </div>
 
 <a href="{{ url_for('bins')}}" class="btn btn-outline-secondary btn-sm">Back To Bins</a>
-{% if bin.poster_id == current_user.id %}
-	<a href="{{ url_for('edit_bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">Edit Bin</a>
-	<a href="{{ url_for('delete_bin', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Delete Bin</a>
-	{% if not bin.released %}
+	{% if not bin.status %}
 	<a href="{{ url_for('make_released', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Release bin</a>
 	{% endif %}
-	{% if not bin.available %}
+	{% if not bin.availability %}
 	<a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
 	{% endif %}
-{% endif %}
 
 {% endblock %}
