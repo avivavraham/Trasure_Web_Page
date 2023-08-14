@@ -1,11 +1,12 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from web_forms import LoginForm, BinForm, UserForm, PasswordForm
 import requests
+from datetime import datetime, timedelta
+
 # create a flask instance
 app = Flask(__name__)
 # Old SQLAlchemy Data Base
@@ -117,6 +118,9 @@ def page_not_found(e):
 # Create Login Page
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    # Check if the user is already logged in
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
     form = LoginForm()
     if form.validate_on_submit():
         user = Users.query.filter_by(username=form.username.data).first()
@@ -142,11 +146,56 @@ def logout():
     return redirect(url_for('login'))
 
 
+def parse_timestamp(timestamp_str):
+    return datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def check_time_difference(last_time_str):
+    last_time = parse_timestamp(last_time_str)
+    current_time = datetime.now()
+    time_difference = current_time - last_time
+    return time_difference > timedelta(hours=8)
+
+
+def format_timestamp(timestamp_str):
+    return datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def friendly_timedelta(delta):
+    if isinstance(delta, timedelta):
+        days = delta.days
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if days > 1:
+            return f"{days} days"
+        if days == 1:
+            return f"{days} day"
+        elif hours > 0:
+            return f"{hours} hours"
+        elif minutes > 0:
+            return f"{minutes} minutes"
+        else:
+            return f"{seconds} seconds"
+    else:
+        return ""
+
+
+app.jinja_env.filters['friendly_timedelta'] = friendly_timedelta
+
+
+# All the problematic Bins(bins that haven't been released/available for a long time)
 @app.route('/bins')
 @login_required
 def bins():
     # Grab all the bins from the cloud
-    return render_template("bins.html", bins=get_bins())
+    bins = get_bins()
+    problematic_bins = []
+    for bin in bins:
+        if (not bin.status and check_time_difference(bin.last_acquire_time)) or (bin.availability and check_time_difference(bin.last_pickup_time)):
+            problematic_bins.append(bin)
+    return render_template("bins.html", bins=problematic_bins,
+                           format_timestamp=format_timestamp, current_time=datetime.now())
 
 
 @app.route('/bin/<string:id>')
@@ -264,6 +313,7 @@ def delete_bin(id):
 
 '''
 
+
 @app.route('/make_available/<string:id>', methods=['GET', 'POST'])
 @login_required
 def make_available(id):
@@ -299,7 +349,7 @@ def make_released(id):
         return render_template("bins.html", bins=bins)
 
 
-@app.route('/make_available/<string:id>', methods=['GET', 'POST'])
+@app.route('/remove_ownership/<string:id>', methods=['GET', 'POST'])
 @login_required
 def remove_ownership(id):
     bins = get_bins()
@@ -322,7 +372,7 @@ def scatter_map():
     user_id = current_user.id
     user_bins = get_bins()
     # Extract latitude and longitude data for each bin
-    levels = [bin.level for bin in user_bins]
+    levels = [bin.level/bin.depth * 100 for bin in user_bins]
     latitudes = [bin.latitude for bin in user_bins]
     longitudes = [bin.longitude for bin in user_bins]
     ids = [bin.id for bin in user_bins]

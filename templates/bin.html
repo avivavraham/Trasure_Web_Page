@@ -35,5 +35,7 @@
 	{% if not bin.availability %}
 	<a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
 	{% endif %}
+	<a href="{{ url_for('remove_ownership', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Remove Ownership</a>
+
 
 {% endblock %}

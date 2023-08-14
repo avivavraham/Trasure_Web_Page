@@ -3,46 +3,48 @@
 {% block content %}
 
 {% for message in get_flashed_messages() %}
-	<div class="alert alert-warning alert-dismissible fade show" role="alert">
-	  {{ message }}
-	  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-	</div>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 {% endfor %}
 
 <br/>
-<h1>Your Bins</h1>
+<h1>Your Faulty Bins</h1>
 <br/>
 
 {% for bin in bins %}
+    <div class="shadow p-3 mb-5 bg-body rounded">
+		<h2>{{ bin.id }}</h2>
+        <small>
+            {% if bin.status %}
+                The Bin is released (no worker is currently on about to pick it up)<br/>
+            {% else %}
+                The Bin is not released (worker is currently on about to pick it up)
+                <br/>
+            {% endif %}
+            {% if bin.availability %}
+                The Bin is available (should be picked up)<br/>
+            {% else %}
+                The Bin is not available (shouldn't be picked up)
+                <br/>
+            {% endif %}
+			Last Pickup Time: {{ format_timestamp(bin.last_pickup_time).strftime('%Y-%m-%d, %H:%M') }}<br/>
+            Time Difference with Last Pickup: {{ (current_time - format_timestamp(bin.last_pickup_time))|friendly_timedelta }}<br/>
+            Last Acquire Time: {{ format_timestamp(bin.last_acquire_time).strftime('%Y-%m-%d, %H:%M') }}<br/>
+            Time Difference with Last Acquire: {{ (current_time - format_timestamp(bin.last_acquire_time))|friendly_timedelta }}<br/>
 
-	<div class="shadow p-3 mb-5 bg-body rounded">
-		<small>
-			{% if bin.status %}
-			The Bin is released (no worker is currently on about to pick it up)<br/>
-    {% else %}
-			The Bin is not released (worker is currently on about to pick it up)
-<br/>
-			{% endif %}
-			{% if bin.availability %}
-			The Bin is available (should be picked up)<br/>
-    {% else %}
-			The Bin is not available (shouldn't be picked up)
-<br/>
-			{% endif %}
-
-
-		</small>
-		<br/><br/>
-		<br/><br/>
-		<a href="{{ url_for('bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">View Bin's Attributes</a>
-		{% if not bin.status %}
-		<a href="{{ url_for('make_released', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Release bin</a>
-		{% endif %}
-		{% if not bin.availability %}
-		<a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
-		{% endif %}
-</div>
-<br/>
+        </small>
+        <br/><br/>
+        <a href="{{ url_for('bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">View Bin's Attributes</a>
+        {% if not bin.status %}
+            <a href="{{ url_for('make_released', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Release bin</a>
+        {% endif %}
+        {% if not bin.availability %}
+            <a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
+        {% endif %}
+    </div>
+    <br/>
 {% endfor %}
 <br/>
 {% endblock %}
