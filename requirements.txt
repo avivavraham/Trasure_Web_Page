@@ -1,0 +1,7 @@
+```plaintext
+Flask
+Flask-Login
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-WTF
+requests

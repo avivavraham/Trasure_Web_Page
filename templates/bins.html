@@ -37,9 +37,6 @@
         </small>
         <br/><br/>
         <a href="{{ url_for('bin', id=bin.id)}}" class="btn btn-outline-secondary btn-sm">View Bin's Attributes</a>
-        {% if not bin.status %}
-            <a href="{{ url_for('make_released', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Release bin</a>
-        {% endif %}
         {% if not bin.availability %}
             <a href="{{ url_for('make_available', id=bin.id)}}" class="btn btn-outline-danger btn-sm">Make Bin Available</a>
         {% endif %}

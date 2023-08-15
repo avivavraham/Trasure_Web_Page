@@ -3,7 +3,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from web_forms import LoginForm, BinForm, UserForm, PasswordForm
+from web_forms import LoginForm, UserForm, PasswordForm
 import requests
 from datetime import datetime, timedelta
 
@@ -29,21 +29,6 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return Users.query.get(int(user_id))
-
-
-# Apps Routes: Alphabetically Ordered-
-# login  '/',
-# Add Bin '/add_bin',
-# Dashboard 'dashboard',
-# Delete '/delete/<int:id>'
-# Error handlers
-# Logout '/logout'
-# Name '/name'
-# Bins: '/bins', '/bins/<int:id>', '/bins/edit/<int:id>', '/bins/delete/<int:id>'
-# Scatter map '/scatter_map'
-# Test Password '/test_pw'
-# Update '/update/<int:id>'
-# User: '/user/<name>', '/user-add'
 
 
 # Create Dashboard Page
@@ -146,6 +131,7 @@ def logout():
     return redirect(url_for('login'))
 
 
+# Auxiliary functions for time formatting
 def parse_timestamp(timestamp_str):
     return datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%f")
 
@@ -195,17 +181,268 @@ def bins():
         if (not bin.status and check_time_difference(bin.last_acquire_time)) or (bin.availability and check_time_difference(bin.last_pickup_time)):
             problematic_bins.append(bin)
     return render_template("bins.html", bins=problematic_bins,
-                           format_timestamp=format_timestamp, current_time=datetime.now())
+                           format_timestamp=format_timestamp, current_time=datetime.utcnow())
 
 
+# shows bin Attributes
 @app.route('/bin/<string:id>')
 def bin(id):
     bins = get_bins()
     for user_bin in bins:
         if user_bin.id == id:
-            return render_template('bin.html', bin=user_bin)
+            return render_template('bin.html', bin=user_bin,
+                                   format_timestamp=format_timestamp, current_time=datetime.utcnow())
     flash("Bin is not found")
-    return render_template("bins.html", bins=bins)
+    return render_template("bins.html", bins=bins,
+                           format_timestamp=format_timestamp, current_time=datetime.utcnow())
+
+
+# make bin available using Azure function app
+@app.route('/make_available/<string:id>', methods=['GET', 'POST'])
+@login_required
+def make_available(id):
+    bins = get_bins()
+    for user_bin in bins:
+        if user_bin.id == id:
+            bin = user_bin
+            # Update Database
+
+            # perform get request to relevant azure function
+            response = requests.get(f"https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/makebinavailable?code=mS9iSxb1sUIMtICiyMHOqvPyN6WqS9GLtSnrUnjIsMczAzFuPaI-Sg%3D%3D&bin_id={user_bin.id}")
+
+            # if response is successful, show success flash message
+            if response.status_code >= 200 and response.status_code < 300:
+                bin.availability = True
+                flash(f"made bin {user_bin.id} available!")
+
+            # else show error flash message
+            else:
+                flash("error - couldn't make available the bin")
+
+            # redirect to bin (to reload certain information if needed)            
+            return redirect(url_for('bin', id=bin.id))
+    else:
+        flash("You Aren't Authorized to edit this bin")
+        bins = get_bins()
+        return render_template("bins.html", bins=bins)
+
+
+# remove bin ownership using Azure function app
+@app.route('/remove_ownership/<string:id>', methods=['GET', 'POST'])
+@login_required
+def remove_ownership(id):
+    bins = get_bins()
+    for user_bin in bins:
+        if user_bin.id == id:
+            bin = user_bin
+            
+            # perform get request to relevant azure function
+            response = requests.get(f"https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/freebinownership?code=ElseYU9NKPIGWWgfBRxOueiYfXvAeu6NMYVL4HlPJKsdAzFup39Pxg%3D%3D&bin_id={user_bin.id}")
+
+            # if response is successful, show success flash message
+            if response.status_code >= 200 and response.status_code < 300:
+                flash(f"removed ownership from bin {user_bin.id}")
+
+            # else show error flash message
+            else:
+                flash(f"error removing ownership from bin {user_bin.id}")
+
+            # redirect to bin page
+            return redirect(url_for('login'))
+    else:
+        flash("You Aren't Authorized to edit this bin")
+        bins = get_bins()
+        return render_template("bins.html", bins=bins)
+
+
+# presenting a scatter map with all the bins in it.
+@app.route('/scatter_map')
+@login_required
+def scatter_map():
+    # Get the logged-in user's ID
+    user_id = current_user.id
+    user_bins = get_bins()
+    # Extract latitude and longitude data for each bin
+    levels = [bin.level/bin.depth * 100 for bin in user_bins]
+    latitudes = [bin.latitude for bin in user_bins]
+    longitudes = [bin.longitude for bin in user_bins]
+    ids = [bin.id for bin in user_bins]
+    return render_template('scatter_map.html', latitudes=latitudes, longitudes=longitudes, levels=levels, ids=ids)
+
+
+# Create Password Test Page
+@app.route('/test_pw', methods=['GET', 'POST'])
+def test_pw():
+    email = None
+    password = None
+    pw_to_check = None
+    passed = None
+    form = PasswordForm()
+
+    # Validate Form
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password_hash.data
+        # clearing the Form
+        form.email.data = ''
+        form.password_hash.data = ''
+        # Look up user by email address
+        pw_to_check = Users.query.filter_by(email=email).first()
+        # Check Hashed Password
+        passed = check_password_hash(pw_to_check.password_hash, password)
+
+    return render_template("test_pw.html",
+                           email=email,
+                           password=password,
+                           pw_to_check=pw_to_check,
+                           passed=passed,
+                           form=form)
+
+
+# Update Data Base Record
+@app.route('/update/<string:id>', methods=['GET', 'POST'])
+@login_required
+def update(id):
+    form = UserForm()
+    name_to_update = Users.query.get_or_404(id)
+    if request.method == "POST":
+        name_to_update.name = request.form['name']
+        name_to_update.email = request.form['email']
+        name_to_update.age = request.form['age']
+        name_to_update.username = request.form['username']
+        try:
+            db.session.commit()
+            flash("User Updated Successfully")
+            return render_template("update.html",
+                                   form=form,
+                                   name_to_update=name_to_update,
+                                   id=id)
+        except:
+            db.session.commit()
+            flash("Error! Looks like there was a problem...\tplease try again. ")
+            return render_template("update.html",
+                                   form=form,
+                                   name_to_update=name_to_update,
+                                   id=id)
+    else:
+        return render_template("update.html",
+                               form=form,
+                               name_to_update=name_to_update,
+                               id=id)
+
+
+# Adding a new user
+@app.route('/user/add', methods=['GET', 'POST'])
+def add_user():
+    name = None
+    form = UserForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(email=form.email.data).first()
+        if user is None:
+            # Hashing password!
+            hashed_pw = generate_password_hash(form.password_hash.data)
+            user = Users(username=form.username.data, name=form.name.data, email=form.email.data, age=form.age.data,
+                         password_hash=hashed_pw)
+            db.session.add(user)
+            db.session.commit()
+        name = form.name.data
+        form.name.data = ''
+        form.username.data = ''
+        form.email.data = ''
+        form.age.data = 0
+        form.password_hash.data = ''
+        flash("User Added Successfully")
+    our_users = Users.query.order_by(Users.date_added)
+    return render_template("add_user.html",
+                           form=form,
+                           name=name,
+                           our_users=our_users)
+
+
+# Classes-
+class Bins:
+    def __init__(self, partition_key, row_key, latitude, longitude, width,
+                 height, depth, level, status, availability, last_acquire_time, last_pickup_time):
+        self.partition_key = partition_key
+        self.id = row_key
+        self.latitude = latitude
+        self.longitude = longitude
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.level = level
+        self.status = (status == "Released")
+        self.availability = (availability == "Available")
+        self.last_acquire_time = last_acquire_time
+        self.last_pickup_time = last_pickup_time
+
+
+# create Model
+class Users(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(25), nullable=False, unique=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False, unique=True)
+    age = db.Column(db.Integer)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow())
+    # Security - password
+    password_hash = db.Column(db.String(128))
+    # User Can Have Many Bins
+    # bins = db.relationship('Bins', backref='poster')
+
+    @property
+    def password(self):
+        raise AttributeError('password is not readable attribute!')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    # Create a string
+    def __repr__(self):
+        return '<Name %r>' % self.name
+
+
+with app.app_context():
+    db.create_all()
+
+
+# Getting all the bins from the appropriate Azure Function app.
+def get_bins():
+    try:
+        # URL to fetch bins data
+        url = "https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/getallbins?code=dbP4EdbYUOxkI7ujXDGPimwAGy4EplPSlU7UVPsL2oicAzFuhtKZAg%3D%3D"
+
+        # Make GET request to the URL
+        response = requests.get(url)
+        json_response = response.json()
+        # Convert JSON response to a list of Bins objects
+        user_bins = []
+        for bin_data in json_response:
+            if bin_data["PartitionKey"] == "Bin":
+                bin_obj = Bins(
+                    partition_key="Bin",
+                    row_key=bin_data["RowKey"],
+                    latitude=bin_data["bin_latitude"],
+                    longitude=bin_data["bin_longitude"],
+                    width=bin_data["bin_width_cm"],
+                    height=bin_data["bin_height_cm"],
+                    depth=bin_data["bin_depth_cm"],
+                    level=bin_data["bin_level_cm"],
+                    status=bin_data["bin_status"],
+                    availability=bin_data["bin_availability"],
+                    last_acquire_time=bin_data["last_acquire_time"],
+                    last_pickup_time=bin_data["last_pickup_time"]
+                )
+                user_bins.append(bin_obj)
+        return user_bins
+    except:
+        # Return an error message
+        flash("Whoops! There was a problem getting the bins, please try again...")
+        return []
 
 '''
 
@@ -312,37 +549,7 @@ def delete_bin(id):
         return render_template("bins.html", bins=bins)
 
 '''
-
-
-@app.route('/make_available/<string:id>', methods=['GET', 'POST'])
-@login_required
-def make_available(id):
-    bins = get_bins()
-    for user_bin in bins:
-        if user_bin.id == id:
-            bin = user_bin
-            # Update Database
-
-            # perform get request to relevant azure function
-            response = requests.get(f"https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/makebinavailable?code=mS9iSxb1sUIMtICiyMHOqvPyN6WqS9GLtSnrUnjIsMczAzFuPaI-Sg%3D%3D&bin_id={user_bin.id}")
-
-            # if response is successful, show success flash message
-            if response.status_code >= 200 and response.status_code < 300:
-                bin.availability = True
-                flash(f"made bin {user_bin.id} available!")
-
-            # else show error flash message
-            else:
-                flash("error - couldn't make available the bin")
-
-            # redirect to bin (to reload certain information if needed)            
-            return redirect(url_for('bin', id=bin.id))
-    else:
-        flash("You Aren't Authorized to edit this bin")
-        bins = get_bins()
-        return render_template("bins.html", bins=bins)
-
-
+'''
 @app.route('/make_released/<string:id>', methods=['GET', 'POST'])
 @login_required
 def make_released(id):
@@ -359,219 +566,4 @@ def make_released(id):
         flash("You Aren't Authorized to edit this bin")
         bins = get_bins()
         return render_template("bins.html", bins=bins)
-
-
-@app.route('/remove_ownership/<string:id>', methods=['GET', 'POST'])
-@login_required
-def remove_ownership(id):
-    bins = get_bins()
-    for user_bin in bins:
-        if user_bin.id == id:
-            bin = user_bin
-            
-            # perform get request to relevant azure function
-            response = requests.get(f"https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/freebinownership?code=ElseYU9NKPIGWWgfBRxOueiYfXvAeu6NMYVL4HlPJKsdAzFup39Pxg%3D%3D&bin_id={user_bin.id}")
-
-            # if response is successful, show success flash message
-            if response.status_code >= 200 and response.status_code < 300:
-                flash(f"removed ownership from bin {user_bin.id}")
-
-            # else show error flash message
-            else:
-                flash(f"error removing ownership from bin {user_bin.id}")
-
-            # redirect to bin page
-            return redirect(url_for('login'))
-    else:
-        flash("You Aren't Authorized to edit this bin")
-        bins = get_bins()
-        return render_template("bins.html", bins=bins)
-
-
-@app.route('/scatter_map')
-@login_required
-def scatter_map():
-    # Get the logged-in user's ID
-    user_id = current_user.id
-    user_bins = get_bins()
-    # Extract latitude and longitude data for each bin
-    levels = [bin.level/bin.depth * 100 for bin in user_bins]
-    latitudes = [bin.latitude for bin in user_bins]
-    longitudes = [bin.longitude for bin in user_bins]
-    ids = [bin.id for bin in user_bins]
-    return render_template('scatter_map.html', latitudes=latitudes, longitudes=longitudes, levels=levels, ids=ids)
-
-
-# Create Password Test Page
-@app.route('/test_pw', methods=['GET', 'POST'])
-def test_pw():
-    email = None
-    password = None
-    pw_to_check = None
-    passed = None
-    form = PasswordForm()
-
-    # Validate Form
-    if form.validate_on_submit():
-        email = form.email.data
-        password = form.password_hash.data
-        # clearing the Form
-        form.email.data = ''
-        form.password_hash.data = ''
-        # Look up user by email address
-        pw_to_check = Users.query.filter_by(email=email).first()
-        # Check Hashed Password
-        passed = check_password_hash(pw_to_check.password_hash, password)
-
-    return render_template("test_pw.html",
-                           email=email,
-                           password=password,
-                           pw_to_check=pw_to_check,
-                           passed=passed,
-                           form=form)
-
-
-# Update Data Base Record
-@app.route('/update/<string:id>', methods=['GET', 'POST'])
-@login_required
-def update(id):
-    form = UserForm()
-    name_to_update = Users.query.get_or_404(id)
-    if request.method == "POST":
-        name_to_update.name = request.form['name']
-        name_to_update.email = request.form['email']
-        name_to_update.age = request.form['age']
-        name_to_update.username = request.form['username']
-        try:
-            db.session.commit()
-            flash("User Updated Successfully")
-            return render_template("update.html",
-                                   form=form,
-                                   name_to_update=name_to_update,
-                                   id=id)
-        except:
-            db.session.commit()
-            flash("Error! Looks like there was a problem...\tplease try again. ")
-            return render_template("update.html",
-                                   form=form,
-                                   name_to_update=name_to_update,
-                                   id=id)
-    else:
-        return render_template("update.html",
-                               form=form,
-                               name_to_update=name_to_update,
-                               id=id)
-
-
-# Adding a new user
-@app.route('/user/add', methods=['GET', 'POST'])
-def add_user():
-    name = None
-    form = UserForm()
-    if form.validate_on_submit():
-        user = Users.query.filter_by(email=form.email.data).first()
-        if user is None:
-            # Hashing password!
-            hashed_pw = generate_password_hash(form.password_hash.data)
-            user = Users(username=form.username.data, name=form.name.data, email=form.email.data, age=form.age.data,
-                         password_hash=hashed_pw)
-            db.session.add(user)
-            db.session.commit()
-        name = form.name.data
-        form.name.data = ''
-        form.username.data = ''
-        form.email.data = ''
-        form.age.data = 0
-        form.password_hash.data = ''
-        flash("User Added Successfully")
-    our_users = Users.query.order_by(Users.date_added)
-    return render_template("add_user.html",
-                           form=form,
-                           name=name,
-                           our_users=our_users)
-
-
-# Classes-
-
-class Bins:
-    def __init__(self, partition_key, row_key, latitude, longitude, width,
-                 height, depth, level, status, availability, last_acquire_time, last_pickup_time):
-        self.partition_key = partition_key
-        self.id = row_key
-        self.latitude = latitude
-        self.longitude = longitude
-        self.width = width
-        self.height = height
-        self.depth = depth
-        self.level = level
-        self.status = (status == "Released")
-        self.availability = (availability == "Available")
-        self.last_acquire_time = last_acquire_time
-        self.last_pickup_time = last_pickup_time
-
-
-# create Model
-class Users(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(25), nullable=False, unique=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False, unique=True)
-    age = db.Column(db.Integer)
-    date_added = db.Column(db.DateTime, default=datetime.utcnow())
-    # Security - password
-    password_hash = db.Column(db.String(128))
-    # User Can Have Many Bins
-    # bins = db.relationship('Bins', backref='poster')
-
-    @property
-    def password(self):
-        raise AttributeError('password is not readable attribute!')
-
-    @password.setter
-    def password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def verify_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-    # Create a string
-    def __repr__(self):
-        return '<Name %r>' % self.name
-
-
-with app.app_context():
-    db.create_all()
-
-
-def get_bins():
-    try:
-        # URL to fetch bins data
-        url = "https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/getallbins?code=dbP4EdbYUOxkI7ujXDGPimwAGy4EplPSlU7UVPsL2oicAzFuhtKZAg%3D%3D"
-
-        # Make GET request to the URL
-        response = requests.get(url)
-        json_response = response.json()
-        # Convert JSON response to a list of Bins objects
-        user_bins = []
-        for bin_data in json_response:
-            if bin_data["PartitionKey"] == "Bin":
-                bin_obj = Bins(
-                    partition_key="Bin",
-                    row_key=bin_data["RowKey"],
-                    latitude=bin_data["bin_latitude"],
-                    longitude=bin_data["bin_longitude"],
-                    width=bin_data["bin_width_cm"],
-                    height=bin_data["bin_height_cm"],
-                    depth=bin_data["bin_depth_cm"],
-                    level=bin_data["bin_level_cm"],
-                    status=bin_data["bin_status"],
-                    availability=bin_data["bin_availability"],
-                    last_acquire_time=bin_data["last_acquire_time"],
-                    last_pickup_time=bin_data["last_pickup_time"]
-                )
-                user_bins.append(bin_obj)
-        return user_bins
-    except:
-        # Return an error message
-        flash("Whoops! There was a problem getting the bins, please try again...")
-        return []
+'''

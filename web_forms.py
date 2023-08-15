@@ -21,7 +21,7 @@ class PasswordForm(FlaskForm):
     password_hash = PasswordField("What's your password", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
-
+'''
 class BinForm(FlaskForm):
     height = FloatField("Height of bin",
                         validators=[DataRequired(), NumberRange(min=0,
@@ -40,6 +40,7 @@ class BinForm(FlaskForm):
     available = BooleanField("should be picked up or not")
     released = BooleanField("no worker is currently on about to pick it up")
     submit = SubmitField("Submit")
+'''
 
 
 class LoginForm(FlaskForm):

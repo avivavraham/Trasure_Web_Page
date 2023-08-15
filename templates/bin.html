@@ -22,8 +22,9 @@
 	Longitude: {{ bin.longitude }}<br/>
 	Released: {{ bin.status }}<br/>
 	Available: {{ bin.availability }}<br/>
-	Last Released: {{ bin.last_pickup_time }}<br/>
-	Last Acquired: {{ bin.last_acquire_time }}<br/>
+	Last Pickup Time: {{ format_timestamp(bin.last_pickup_time).strftime('%Y-%m-%d, %H:%M') }}<br/>
+	Last Acquire Time: {{ format_timestamp(bin.last_acquire_time).strftime('%Y-%m-%d, %H:%M') }}<br/>
+
 
 	</small>
 
