@@ -1,6 +1,6 @@
 # Trasure Admin Web Application
 
-![App Screenshot](static/screenshot of logo.jpeg)
+![App Screenshot](./static/screenshot of logo.jpeg)
 
 ## Description
 
@@ -43,7 +43,7 @@ The Treasure Web Application provides administrators with a live view of problem
 
 ### Live View of Problematic Bins on Interactive Map
 
-![Live View](static/screenshot of faulty bins.jpeg)
+![Live View](./static/screenshot of faulty bins.jpeg)
 
 The admin page offers a live view of problematic bins displayed on an interactive map. Each bin is represented by an icon on the map, which can be clicked to access more information about the specific bin. This provides a comprehensive overview of the bins that require attention.
 
@@ -53,7 +53,7 @@ The admin page offers a live view of problematic bins displayed on an interactiv
 Admin users can Register, Login and easily update their personal information, including name, email, age, and username. The user-friendly dashboard allows quick modifications, ensuring that user profiles remain accurate and up-to-date.
 
 ### Remove Ownership of Bins + Make Bins Available for Pickup
-![Make Available](static/screenshot of buttons.jpeg)
+![Make Available](./static/screenshot of buttons.jpeg)
 
 
 Admins have the capability to remove ownership of bins that require attention. This action can be performed through a user-friendly interface, streamlining the process of reassigning bins for optimal maintenance.
@@ -62,7 +62,7 @@ To prioritize bin collection, admins can make specific bins available for pickup
 
 ### Scatter Map Display
 
-![Scatter Map](static/Screenshot of scatter map.png)
+![Scatter Map](./static/Screenshot of scatter map.png)
 
 The scatter map offers a comprehensive view of all bins within the system. This feature provides information about each bin's fill level and unique ID. The scatter map aids admins in identifying trends, patterns, and potential issues with bin usage.
 
