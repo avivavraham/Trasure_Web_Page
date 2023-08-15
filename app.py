@@ -152,7 +152,7 @@ def parse_timestamp(timestamp_str):
 
 def check_time_difference(last_time_str):
     last_time = parse_timestamp(last_time_str)
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     time_difference = current_time - last_time
     return time_difference > timedelta(hours=8)
 
@@ -322,8 +322,20 @@ def make_available(id):
         if user_bin.id == id:
             bin = user_bin
             # Update Database
-            bin.availability = True
-            flash("Bin Has Made Available!")
+
+            # perform get request to relevant azure function
+            response = requests.get(f"https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/makebinavailable?code=mS9iSxb1sUIMtICiyMHOqvPyN6WqS9GLtSnrUnjIsMczAzFuPaI-Sg%3D%3D&bin_id={user_bin.id}")
+
+            # if response is successful, show success flash message
+            if response.status_code >= 200 and response.status_code < 300:
+                bin.availability = True
+                flash(f"made bin {user_bin.id} available!")
+
+            # else show error flash message
+            else:
+                flash("error - couldn't make available the bin")
+
+            # redirect to bin (to reload certain information if needed)            
             return redirect(url_for('bin', id=bin.id))
     else:
         flash("You Aren't Authorized to edit this bin")
@@ -356,9 +368,20 @@ def remove_ownership(id):
     for user_bin in bins:
         if user_bin.id == id:
             bin = user_bin
-            # Update Database
-            flash("removed ownership from bin")
-            return redirect(url_for('bin', id=bin.id))
+            
+            # perform get request to relevant azure function
+            response = requests.get(f"https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/freebinownership?code=ElseYU9NKPIGWWgfBRxOueiYfXvAeu6NMYVL4HlPJKsdAzFup39Pxg%3D%3D&bin_id={user_bin.id}")
+
+            # if response is successful, show success flash message
+            if response.status_code >= 200 and response.status_code < 300:
+                flash(f"removed ownership from bin {user_bin.id}")
+
+            # else show error flash message
+            else:
+                flash(f"error removing ownership from bin {user_bin.id}")
+
+            # redirect to bin page
+            return redirect(url_for('login'))
     else:
         flash("You Aren't Authorized to edit this bin")
         bins = get_bins()
@@ -523,9 +546,7 @@ with app.app_context():
 def get_bins():
     try:
         # URL to fetch bins data
-        url = "https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/" \
-              "getbinsofvicinity?code=SUQqcEAOu4gUmB8l_CN5JChJDM-uAyxWpQiXBh1wm5kyAzFu" \
-              "yp1qNg%3D%3D&latitude=32.122927&longitude=34.838204&radius_km=3"
+        url = "https://smartbinnetworkmainfunctionapp.azurewebsites.net/api/getallbins?code=dbP4EdbYUOxkI7ujXDGPimwAGy4EplPSlU7UVPsL2oicAzFuhtKZAg%3D%3D"
 
         # Make GET request to the URL
         response = requests.get(url)
