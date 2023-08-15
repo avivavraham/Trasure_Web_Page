@@ -1,6 +1,6 @@
 # Trasure Admin Web Application
 
-![App Screenshot](./static/screenshot of logo.jpeg)
+![App Screenshot](./static/logo.png)
 
 ## Description
 
